@@ -1,0 +1,13 @@
+{
+  "name": "3dprint33-chatbot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Twitch chat bot for 3DPrint33, answering viewers via claude -p",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "tmi.js": "^1.8.5"
+  }
+}
