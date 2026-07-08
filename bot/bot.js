@@ -51,6 +51,10 @@ const client = new tmi.Client({
 
 client.on("connected", () => {
   console.log(`[bot] connected to #${TWITCH_CHANNEL}`);
+  client.say(
+    `#${TWITCH_CHANNEL}`,
+    "Bot en ligne ! Tape !ask <ta question> ou mentionne @3dprint33 pour me parler."
+  );
   // Only remind when the chat has been active, to avoid talking to an empty room.
   setInterval(() => {
     if (messagesSinceReminder === 0) return;
