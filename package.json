@@ -1,0 +1,14 @@
+{
+  "name": "bambu-twitch-overlay",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MQTT bridge and OBS overlay for streaming Bambu Lab P2S print status",
+  "scripts": {
+    "start": "node bridge.js"
+  },
+  "dependencies": {
+    "mqtt": "^5.10.1",
+    "ws": "^8.18.0"
+  }
+}

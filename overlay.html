@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bambu P2S Overlay</title>
+<style>
+  :root {
+    --accent: #00c853;
+    --bg: rgba(18, 20, 24, 0.82);
+    --text: #f4f6f8;
+    --muted: #9aa4b2;
+    --track: rgba(255, 255, 255, 0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: transparent; }
+  body {
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    padding: 16px;
+  }
+  .card {
+    width: 420px;
+    background: var(--bg);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .title { font-size: 15px; font-weight: 600; }
+  .state {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--track);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .state.live { background: rgba(0, 200, 83, 0.18); color: var(--accent); }
+  .state.paused { background: rgba(255, 179, 0, 0.18); color: #ffb300; }
+  .state.done { background: rgba(41, 121, 255, 0.18); color: #4d8bff; }
+  .file {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .progress-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .pct { font-size: 28px; font-weight: 700; }
+  .eta { font-size: 13px; color: var(--muted); }
+  .bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--track);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.6s ease;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .stat {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+  }
+  .stat .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .stat .value { font-size: 15px; font-weight: 600; }
+  .offline .card { opacity: 0.5; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="title">Bambu Lab P2S</div>
+      <div class="state" id="state">CONNECTING</div>
+    </div>
+    <div class="file" id="file">Waiting for printer...</div>
+    <div class="progress-row">
+      <div class="pct" id="pct">0%</div>
+      <div class="eta" id="eta">--</div>
+    </div>
+    <div class="bar"><div class="bar-fill" id="bar"></div></div>
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Layer</div>
+        <div class="value" id="layer">0 / 0</div>
+      </div>
+      <div class="stat">
+        <div class="label">Nozzle</div>
+        <div class="value" id="nozzle">0&deg;</div>
+      </div>
+      <div class="stat">
+        <div class="label">Bed</div>
+        <div class="value" id="bed">0&deg;</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WS_URL = "ws://localhost:7781";
+
+  const el = {
+    body: document.body,
+    state: document.getElementById("state"),
+    file: document.getElementById("file"),
+    pct: document.getElementById("pct"),
+    eta: document.getElementById("eta"),
+    bar: document.getElementById("bar"),
+    layer: document.getElementById("layer"),
+    nozzle: document.getElementById("nozzle"),
+    bed: document.getElementById("bed"),
+  };
+
+  function fmtEta(min) {
+    if (!min || min <= 0) return "--";
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return h > 0 ? `${h}h ${m}m left` : `${m}m left`;
+  }
+
+  function applyState(s) {
+    el.body.classList.toggle("offline", !s.connected);
+
+    const g = (s.gcodeState || "").toUpperCase();
+    el.state.className = "state";
+    if (!s.connected) {
+      el.state.textContent = "OFFLINE";
+    } else if (g === "RUNNING") {
+      el.state.textContent = "PRINTING";
+      el.state.classList.add("live");
+    } else if (g === "PAUSE") {
+      el.state.textContent = "PAUSED";
+      el.state.classList.add("paused");
+    } else if (g === "FINISH") {
+      el.state.textContent = "DONE";
+      el.state.classList.add("done");
+    } else {
+      el.state.textContent = g || "IDLE";
+    }
+
+    el.file.textContent = s.fileName || "No active print";
+    el.pct.textContent = `${Math.round(s.progress || 0)}%`;
+    el.eta.textContent = fmtEta(s.remainingMin);
+    el.bar.style.width = `${Math.min(100, s.progress || 0)}%`;
+    el.layer.textContent = `${s.layer || 0} / ${s.totalLayers || 0}`;
+    el.nozzle.textContent = `${Math.round(s.nozzleTemp || 0)}°`;
+    el.bed.textContent = `${Math.round(s.bedTemp || 0)}°`;
+  }
+
+  function connect() {
+    const ws = new WebSocket(WS_URL);
+    ws.onmessage = (e) => {
+      try { applyState(JSON.parse(e.data)); } catch {}
+    };
+    ws.onclose = () => {
+      applyState({ connected: false });
+      setTimeout(connect, 2000); // auto-reconnect if the bridge restarts
+    };
+    ws.onerror = () => ws.close();
+  }
+
+  connect();
+</script>
+</body>
+</html>
