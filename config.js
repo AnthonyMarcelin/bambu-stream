@@ -1,9 +1,9 @@
 // Loads printer settings from a local .env file (see .env.example).
 // This file is safe to commit: no secrets live here.
 try {
-  process.loadEnvFile();
+  process.loadEnvFile(import.meta.dirname + "/.env");
 } catch {
-  // No .env file, or Node < 20.12: fall back to the current environment.
+  // No .env file: fall back to the current environment.
 }
 
 const { PRINTER_IP, ACCESS_CODE, WS_PORT } = process.env;

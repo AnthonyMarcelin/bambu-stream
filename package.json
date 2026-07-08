@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "MQTT bridge and OBS overlay for streaming Bambu Lab P2S print status",
+  "description": "MQTT bridge, OBS overlay and Twitch chat bot for a Bambu Lab P2S stream",
   "scripts": {
-    "start": "node bridge.js"
+    "start": "concurrently -n bridge,bot -c green,magenta \"node bridge.js\" \"node bot/bot.js\"",
+    "bridge": "node bridge.js",
+    "bot": "node bot/bot.js"
   },
   "dependencies": {
     "mqtt": "^5.10.1",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
   }
 }

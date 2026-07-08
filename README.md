@@ -1,58 +1,95 @@
-# Bambu P2S → OBS overlay
+# Bambu P2S stream kit
 
-Live print-status overlay for streaming a Bambu Lab P2S. A small Node bridge
-reads the printer over MQTT (LAN) and pushes state to a browser-source overlay
-in OBS.
+Everything to stream a Bambu Lab P2S on Twitch: a live print-status overlay for
+OBS and a chat bot that answers viewers.
+
+## What's inside
+
+```
+.
+├── bridge.js         MQTT -> WebSocket bridge (reads the printer over LAN)
+├── overlay.html      OBS browser source (progress, layer, ETA, temps)
+├── config.js         reads printer settings from .env (safe to commit)
+├── .env              printer IP + access code (git-ignored)
+├── bot/
+│   ├── bot.js        Twitch chat bot answering via `claude -p`
+│   └── .env          Twitch bot token (git-ignored)
+└── brand/            channel logo (PNG + SVG)
+```
 
 ## Requirements
 
-- Node.js 20.12+ (`node -v`; install from https://nodejs.org if missing)
+- Node.js 20.12+ (Node 22 recommended)
 - The printer reachable on your LAN
 - OBS
+- For the bot: Claude Code installed and logged in, plus a Twitch OAuth token
 
-## Setup
+## First-time setup
 
 ```bash
-cp .env.example .env   # then fill in PRINTER_IP and ACCESS_CODE
+# 1. printer settings
+cp .env.example .env            # fill in PRINTER_IP and ACCESS_CODE
+
+# 2. bot settings
+cp bot/.env.example bot/.env    # fill in TWITCH_OAUTH_TOKEN
+
+# 3. install everything
 npm install
-node bridge.js
+npm --prefix bot install
 ```
 
-Find the IP and access code on the printer: Screen → Settings → LAN Only.
+Find the printer IP and access code on the screen: Settings → LAN Only.
+Get a Twitch token (scopes `chat:read`, `chat:edit`) at
+https://twitchtokengenerator.com — it looks like `oauth:xxxx`.
 
-Expected output:
+## Run
+
+Both at once, in one terminal:
+
+```bash
+npm start
+```
+
+Output is prefixed `[bridge]` (green) and `[bot]` (magenta). A single Ctrl+C
+stops both.
+
+Run just one:
+
+```bash
+npm run bridge   # print overlay only
+npm run bot      # chat bot only
+```
+
+Expected on start:
 
 ```
-[ws] overlay server on ws://localhost:7781
-[mqtt] connected to 192.168.1.155
-[mqtt] printer serial: ...
-[state] RUNNING | 30% | layer 12/61 | 86min left
+[bridge] [ws] overlay server on ws://localhost:7781
+[bridge] [mqtt] connected to 192.168.1.155
+[bot] [bot] connected to #3dprint33
 ```
-
-Leave this terminal running while you stream.
 
 ## OBS
 
-1. Add source → **Browser**.
-2. Check **Local file**, pick `overlay.html`.
-3. Width `460`, height `240`, transparent background (already handled).
+- **Print data**: add source → Browser → Local file → `overlay.html`
+  (460×240, transparent). Reconnects on its own if the bridge restarts.
+- **Camera video**: window-capture Bambu Studio and crop to the video, or pull
+  the RTSPS feed (see `go2rtc` note below). Enable **Mode LAN Vue Live** on the
+  printer for the video feed.
 
-The overlay reconnects on its own if you restart the bridge.
+## Bot usage
 
-## Files
+Viewers trigger it with `!ask <question>` or by mentioning `@3dprint33`.
+It posts a welcome line on connect and a reminder every 10 min when the chat is
+active. Tune `COOLDOWN_MS`, `MAX_INFLIGHT`, `REMINDER_MIN` and `SYSTEM_PROMPT`
+in `bot/bot.js` (or `REMINDER_MIN` in `bot/.env`).
 
-- `bridge.js` — MQTT → WebSocket bridge
-- `overlay.html` — OBS browser source
-- `config.js` — reads settings from `.env` (safe to commit)
-- `.env` — your printer IP + access code (git-ignored, never commit)
+`claude -p` runs on your Claude Code subscription: a few seconds of latency per
+reply, and it counts against your usage limits. For heavy traffic, switch to the
+Anthropic API (Haiku).
 
 ## Notes
 
-- Camera video is separate: use Bambu Studio's virtual camera or the RTSPS
-  stream as another OBS source. Enable **Mode LAN Vue Live** on the printer.
-
-## Next
-
-- Twitch last-sub / last-follow: StreamElements widgets on top, or the
-  Twitch API wired into the overlay.
-- Chat bot answering viewers: separate tmi.js + LLM script.
+- `.env` files hold secrets (LAN access code, Twitch token) and are git-ignored.
+  Run `git status` before committing to confirm none appear.
+- Video independent of any window: relay the RTSPS stream through go2rtc, then
+  point an OBS Media source at `rtsp://127.0.0.1:8554/bambu`. (Config TBD.)

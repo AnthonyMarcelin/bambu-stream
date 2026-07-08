@@ -2,7 +2,7 @@ import tmi from "tmi.js";
 import { execFile } from "node:child_process";
 
 try {
-  process.loadEnvFile();
+  process.loadEnvFile(import.meta.dirname + "/.env");
 } catch {
   // No .env, or Node < 20.12: fall back to the current environment.
 }
