@@ -105,6 +105,24 @@ input `rtsp://127.0.0.1:8554/bambu` (uncheck "Local file", enable reconnect).
 The `video/go2rtc.yaml` holds the access code and is git-ignored; a
 `go2rtc.example.yaml` is versioned.
 
+## Background music
+
+DMCA-safe music streamed by URL, no files or app needed. Add an OBS **Media**
+source, uncheck "Local file", and paste a Nightride FM stream into **Input**:
+
+```
+https://stream.nightride.fm/chillsynth.mp3   # chill
+https://stream.nightride.fm/nightride.mp3    # synthwave
+```
+
+Use `.mp3` (OBS reads it reliably; `.m4a` often won't decode). Lower the source
+to about -18 dB in the audio mixer to keep it in the background. To hear it
+locally: right-click the source → Advanced Audio Properties → Monitor → "Monitor
+and Output".
+
+Nightride is stream-safe by design. Other options (Chillhop, StreamBeats) need
+downloaded files or an app plus audio routing (BlackHole on Mac).
+
 ## Notes
 
 - `.env` and `video/go2rtc.yaml` hold secrets (LAN access code, Twitch token)
