@@ -41,6 +41,7 @@ const client = mqtt.connect(`mqtts://${config.printerIp}:8883`, {
 });
 
 let serial = null;
+let lastLog = ""; // only print the heartbeat when something actually changes
 
 client.on("connect", () => {
   console.log(`[mqtt] connected to ${config.printerIp}`);
@@ -96,9 +97,12 @@ client.on("message", (topic, buffer) => {
 
   broadcast();
 
-  // Console heartbeat so you can see data flowing during the first test.
-  console.log(
+  // Log only when the meaningful state changes, to keep the terminal readable.
+  const line =
     `[state] ${state.gcodeState ?? "-"} | ${state.progress}% | ` +
-      `layer ${state.layer}/${state.totalLayers} | ${state.remainingMin}min left`
-  );
+    `layer ${state.layer}/${state.totalLayers} | ${state.remainingMin}min left`;
+  if (line !== lastLog) {
+    lastLog = line;
+    console.log(line);
+  }
 });

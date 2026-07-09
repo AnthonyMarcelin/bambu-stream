@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "MQTT bridge, OBS overlay and Twitch chat bot for a Bambu Lab P2S stream",
+  "description": "MQTT bridge, OBS overlay, Twitch chat bot and go2rtc relay for a Bambu Lab P2S stream",
   "scripts": {
-    "start": "concurrently -n bridge,bot -c green,magenta \"node bridge.js\" \"node bot/bot.js\"",
+    "start": "concurrently -n bridge,bot,video -c green,magenta,cyan \"node bridge.js\" \"node bot/bot.js\" \"cd video && ./go2rtc\"",
     "bridge": "node bridge.js",
-    "bot": "node bot/bot.js"
+    "bot": "node bot/bot.js",
+    "video": "cd video && ./go2rtc",
+    "setup:video": "bash video/install.sh"
   },
   "dependencies": {
     "mqtt": "^5.10.1",

@@ -1,0 +1,8 @@
+streams:
+  bambu: rtsps://bblp:ACCESS_CODE@PRINTER_IP:322/streaming/live/1
+
+rtsp:
+  listen: ":8554"
+
+api:
+  listen: ":1984"

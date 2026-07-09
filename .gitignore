@@ -1,2 +1,6 @@
 node_modules/
 .env
+video/go2rtc_mac_*
+video/go2rtc
+video/*.zip
+video/go2rtc.yaml

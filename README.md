@@ -87,9 +87,25 @@ in `bot/bot.js` (or `REMINDER_MIN` in `bot/.env`).
 reply, and it counts against your usage limits. For heavy traffic, switch to the
 Anthropic API (Haiku).
 
+## Camera video via go2rtc
+
+Window-capturing Bambu Studio freezes when the window loses focus. For a stable
+feed independent of any window, relay the printer's RTSPS stream through go2rtc.
+
+Enable **Mode LAN Vue Live** on the printer first, then:
+
+```bash
+npm run setup:video     # downloads the go2rtc binary for your Mac
+npm run video           # runs go2rtc alone, or use npm start for everything
+```
+
+Check the feed at http://localhost:1984, then in OBS add a Media source with
+input `rtsp://127.0.0.1:8554/bambu` (uncheck "Local file", enable reconnect).
+
+The `video/go2rtc.yaml` holds the access code and is git-ignored; a
+`go2rtc.example.yaml` is versioned.
+
 ## Notes
 
-- `.env` files hold secrets (LAN access code, Twitch token) and are git-ignored.
-  Run `git status` before committing to confirm none appear.
-- Video independent of any window: relay the RTSPS stream through go2rtc, then
-  point an OBS Media source at `rtsp://127.0.0.1:8554/bambu`. (Config TBD.)
+- `.env` and `video/go2rtc.yaml` hold secrets (LAN access code, Twitch token)
+  and are git-ignored. Run `git status` before committing to confirm none appear.
